@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Prof Settings</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+        }
+        .sidebar {
+            width: 220px;
+            background: #154734;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .sidebar a:hover,
+        .active {
+            background: #1f6148;
+        }
+        .main {
+            flex: 1;
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-green {
+            background: #154734;
+            color: white;
+        }
+        .btn-white {
+            background: white;
+            border: 1px solid #ccc;
+        }
+        .content {
+            display: flex;
+            gap: 20px;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h3>DWCC QUIZGUARD</h3>
+        <hr>
+        <a href="#">Dashboard</a>
+        <a href="#">My Library</a>
+        <a href="#">Quizzes</a>
+        <a href="#">Reports</a>
+        <a href="#" class="active">Settings</a>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div>
+                <h2 style="margin: 0;">Settings</h2>
+                <small style="color: gray;">Manage your profile, report preferences, and quiz defaults.</small>
+            </div>
+            <div>
+                <button class="btn btn-white">Cancel</button>
+                <button class="btn btn-green">Save Changes</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div style="flex: 1;">
+                <div class="box">
+                    <h3>Profile</h3>
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Enter full name" />
+
+                    <label>Employee ID</label>
+                    <input type="text" placeholder="Enter employee ID" />
+
+                    <label>DWCC Email</label>
+                    <input type="text" placeholder="Enter DWCC email" />
+
+                    <label>Department</label>
+                    <input type="text" placeholder="Enter department" />
+                </div>
+
+                <div class="box">
+                    <h3>Quiz Defaults</h3>
+                    <label>Default Time Limit (minutes)</label>
+                    <input type="number" placeholder="25" />
+
+                    <label>Default Attempts</label>
+                    <input type="number" value="1" />
+
+                    <label>Default Allowed Violations</label>
+                    <input type="number" value="3" />
+
+                    <label>Default Grading Method</label>
+                    <select>
+                        <option>Highest score</option>
+                        <option>Latest score</option>
+                    </select>
+
+                    <p><input type="checkbox" checked> Shuffle questions</p>
+                    <p><input type="checkbox" checked> Shuffle choices</p>
+                </div>
+            </div>
+
+            <div style="flex: 1;">
+                <div class="box">
+                    <h3>Report Preferences</h3>
+                    <label>Default Export Format</label>
+                    <select>
+                        <option>Excel (.xlsx)</option>
+                        <option>PDF (.pdf)</option>
+                    </select>
+
+                    <p><input type="checkbox" checked> Include violation log</p>
+                    <p><input type="checkbox" checked> Include per-question results</p>
+                </div>
+
+                <div class="box">
+                    <h3>Security</h3>
+                    <p>Password: <button class="btn btn-white">Change</button></p>
+                    <p>Google Account: <span style="color: green;">Connected</span></p>
+                    <p>Active Sessions: <button class="btn btn-white">Sign out all</button></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
