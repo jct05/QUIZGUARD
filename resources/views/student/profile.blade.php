@@ -563,8 +563,8 @@
                                             </span>
                                         </div>
                                         <p class="text-slate-600">
-                                            Your answer: <strong class="text-slate-900">${escapeHtml(yourAns)}</strong>
-                                            ${Number(ans.is_correct) !== 1 ? ` &bull; Correct answer: <strong class="text-emerald-700">${escapeHtml(rightAns)}</strong>` : ''}
+                                            Your answer: <strong class="text-slate-900">${ans.formatted_student_answer || ans.student_answer || '—'}</strong>
+                                            ${Number(ans.is_correct) !== 1 ? ` &bull; Correct answer: <strong class="text-emerald-700">${ans.formatted_correct_answer || ans.correct_answers}</strong>` : ''}
                                         </p>
                                     </div>
                                 `;

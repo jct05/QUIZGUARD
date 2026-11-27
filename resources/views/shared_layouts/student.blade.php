@@ -207,6 +207,36 @@
             const alertBox = document.getElementById('flash-alert');
             if (alertBox) alertBox.remove();
         }
+
+        // Block browser context menu right click across pages
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        // Block keyboard shortcuts for developer tools and source
+        document.addEventListener('keydown', function(event) {
+            const key = (event.key || '').toUpperCase();
+            const ctrlOrMeta = event.ctrlKey || event.metaKey;
+
+            // Block F12
+            if (key === 'F12' || event.keyCode === 123) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+Shift+I/J/C/K (Windows/Linux) and Cmd+Opt+I/J/C/U (macOS)
+            if ((ctrlOrMeta && event.shiftKey && ['I', 'J', 'C', 'K'].includes(key)) ||
+                (event.metaKey && event.altKey && ['I', 'J', 'C', 'U'].includes(key))) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+U / Cmd+U (View Source) and Ctrl+S / Cmd+S (Save Page)
+            if (ctrlOrMeta && ['U', 'S'].includes(key)) {
+                event.preventDefault();
+                return false;
+            }
+        });
     </script>
 
     <!-- Render additional page specific scripts from views -->

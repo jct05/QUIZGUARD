@@ -102,6 +102,13 @@
                     answers are audited</span>
             </div>
 
+            <div id="redemptionBanner"
+                class="hidden bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-amber-800 flex items-center justify-between">
+                <span>Reviewing Skipped Questions — please answer all remaining items to unlock Submit.</span>
+                <span id="skippedRemainingBadge" class="px-2.5 py-0.5 rounded-full bg-amber-200/70 text-amber-900">0
+                    left</span>
+            </div>
+
             <!-- Render question cards dynamically by type and options -->
             @forelse($questionList as $index => $question)
                 @php
@@ -169,7 +176,7 @@
 
             <!-- Question Navigation Buttons -->
             <div class="flex items-center justify-between gap-4 pt-2">
-                @if (!$disableBacktracking)
+                @if (!($activeQuiz->disable_backtracking ?? false))
                     <button type="button" id="prevQuestionBtn" onclick="prevQuestion()"
                         class="py-3 px-6 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-2 disabled:opacity-40">
                         <span>&larr;</span>
@@ -179,11 +186,17 @@
                     <div id="prevQuestionBtn" class="text-[11px] font-semibold text-slate-400">Backtracking disabled</div>
                 @endif
 
-                <button type="button" id="nextQuestionBtn" onclick="nextQuestion()"
-                    class="py-3 px-6 bg-[#11422d] hover:bg-[#0d3423] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-2">
-                    <span id="nextBtnLabel">Next question</span>
-                    <span>&rarr;</span>
-                </button>
+                <div class="flex items-center gap-2.5">
+                    <button type="button" id="skipQuestionBtn" onclick="skipCurrentQuestion()"
+                        class="py-3 px-5 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs sm:text-sm font-bold rounded-xl transition shadow-xs">
+                        Skip
+                    </button>
+                    <button type="button" id="nextQuestionBtn" onclick="handleNextAction()"
+                        class="py-3 px-6 bg-[#11422d] hover:bg-[#0d3423] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-2">
+                        <span id="nextBtnLabel">Next question</span>
+                        <span>&rarr;</span>
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -373,6 +386,8 @@
             const disableBacktracking = {{ $disableBacktracking ? 'true' : 'false' }};
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const answersMap = @json($savedAnswers);
+            const questionCards = Array.from(document.querySelectorAll('.question-card'));
+            const questionIds = questionCards.map(c => c.dataset.questionId);
 
             let currentIndex = 0;
             let remainingSeconds = Math.max(0, Math.floor(Number({{ $remainingSec }})));
@@ -383,6 +398,128 @@
             let isSubmitting = false;
             let isMonitoringActive = false;
             let lastViolationSentAt = 0;
+            let skippedQueue = [];
+            let highestVisitedIndex = 0;
+            let inRedemptionMode = false;
+
+            function isQuestionAnswered(qId) {
+                if (!qId) return false;
+                const textInput = document.getElementById(`studentAnswer_${qId}`);
+                if (textInput && String(textInput.value).trim() !== '') {
+                    answersMap[qId] = textInput.value;
+                }
+                const val = answersMap[qId];
+                return val !== undefined && val !== null && String(val).trim() !== '';
+            }
+
+            function areAllQuestionsAnswered() {
+                if (questionIds.length === 0) return true;
+                return questionIds.every(qId => isQuestionAnswered(qId));
+            }
+
+            function removeFromSkippedQueue(index) {
+                skippedQueue = skippedQueue.filter(i => i !== index);
+            }
+
+            // Move current unanswered question into skipped queue loop
+            function skipCurrentQuestion() {
+                const currentQId = questionIds[currentIndex];
+                if (!isQuestionAnswered(currentQId)) {
+                    skippedQueue = skippedQueue.filter(i => i !== currentIndex);
+                    skippedQueue.push(currentIndex);
+                } else {
+                    removeFromSkippedQueue(currentIndex);
+                }
+
+                advanceAfterSkipOrNext();
+            }
+
+            // Advance forward or cycle through skipped questions queue
+            function handleNextAction() {
+                const currentQId = questionIds[currentIndex];
+                const answeredNow = isQuestionAnswered(currentQId);
+
+                if (answeredNow) {
+                    removeFromSkippedQueue(currentIndex);
+                } else {
+                    skippedQueue = skippedQueue.filter(i => i !== currentIndex);
+                    skippedQueue.push(currentIndex);
+                }
+
+                if (areAllQuestionsAnswered()) {
+                    openSubmitModal();
+                    return;
+                }
+
+                advanceAfterSkipOrNext();
+            }
+
+            function advanceAfterSkipOrNext() {
+                // Phase 1: walk forward through unvisited questions first
+                if (!inRedemptionMode && currentIndex < totalQuestions - 1) {
+                    showQuestion(currentIndex + 1);
+                    return;
+                }
+
+                // Phase 2: enter redemption loop for skipped/unanswered questions
+                inRedemptionMode = true;
+                skippedQueue = skippedQueue.filter(idx => !isQuestionAnswered(questionIds[idx]));
+
+                questionIds.forEach((qId, idx) => {
+                    if (!isQuestionAnswered(qId) && !skippedQueue.includes(idx)) {
+                        skippedQueue.push(idx);
+                    }
+                });
+
+                if (skippedQueue.length > 0) {
+                    const nextSkippedIdx = skippedQueue[0];
+                    if (nextSkippedIdx === currentIndex) {
+                        refreshPaletteUI();
+                    } else {
+                        showQuestion(nextSkippedIdx);
+                    }
+                } else if (areAllQuestionsAnswered()) {
+                    openSubmitModal();
+                }
+            }
+
+            function updateNavigationButtons() {
+                const currentQId = questionIds[currentIndex];
+                const currentAnswered = isQuestionAnswered(currentQId);
+                const allAnswered = areAllQuestionsAnswered();
+
+                const skipBtn = document.getElementById('skipQuestionBtn');
+                const nextBtn = document.getElementById('nextQuestionBtn');
+                const nextLabel = document.getElementById('nextBtnLabel');
+                const banner = document.getElementById('redemptionBanner');
+                const badge = document.getElementById('skippedRemainingBadge');
+
+                if (allAnswered) {
+                    skipBtn?.classList.add('hidden');
+                    if (nextLabel) nextLabel.textContent = 'Finish & Submit';
+                    if (nextBtn) {
+                        nextBtn.className =
+                            'py-3 px-6 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-2';
+                    }
+                    banner?.classList.add('hidden');
+                } else {
+                    skipBtn?.classList.toggle('hidden', currentAnswered);
+                    if (nextBtn) {
+                        nextBtn.className =
+                            'py-3 px-6 bg-[#11422d] hover:bg-[#0d3423] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-2';
+                    }
+
+                    if (inRedemptionMode) {
+                        const unansweredLeft = questionIds.filter(qId => !isQuestionAnswered(qId)).length;
+                        banner?.classList.remove('hidden');
+                        if (badge) badge.textContent = `${unansweredLeft} left`;
+                        if (nextLabel) nextLabel.textContent = currentAnswered ? 'Next Skipped' : 'Skip for now';
+                    } else {
+                        banner?.classList.add('hidden');
+                        if (nextLabel) nextLabel.textContent = currentAnswered ? 'Next question' : 'Skip & Next';
+                    }
+                }
+            }
 
             // Verify true fullscreen width and block active side panels
             function isFullScreenOccupied() {
@@ -433,19 +570,6 @@
                 document.getElementById('exitQuizModal').classList.add('hidden');
             }
 
-            // Require answer on current question before advancing forward
-            function isCurrentQuestionAnswered() {
-                const activeCard = document.querySelector(`.question-card[data-index="${currentIndex}"]`);
-                const qId = activeCard?.dataset.questionId;
-                if (!qId) return true;
-                const textInput = document.getElementById(`studentAnswer_${qId}`);
-                if (textInput) {
-                    answersMap[qId] = textInput.value;
-                }
-                const val = answersMap[qId];
-                return val !== undefined && val !== null && String(val).trim() !== '';
-            }
-
             function showQuestionError(show, message = 'Please answer this question before moving to the next question.') {
                 const activeCard = document.querySelector(`.question-card[data-index="${currentIndex}"]`);
                 const errEl = activeCard?.querySelector('.question-req-error');
@@ -457,10 +581,12 @@
             // Switch visible question card and update progress indicators
             function showQuestion(index) {
                 if (totalQuestions === 0 || index < 0 || index >= totalQuestions) return;
-                if (disableBacktracking && index < currentIndex) return;
+                if (disableBacktracking && !inRedemptionMode && index < currentIndex) return;
 
                 showQuestionError(false);
                 currentIndex = index;
+
+                if (index > highestVisitedIndex) highestVisitedIndex = index;
 
                 document.querySelectorAll('.question-card').forEach(card => {
                     card.classList.toggle('hidden', Number(card.dataset.index) !== index);
@@ -472,11 +598,9 @@
 
                 const prevBtn = document.getElementById('prevQuestionBtn');
                 if (prevBtn && prevBtn.tagName === 'BUTTON') {
-                    prevBtn.disabled = index === 0;
+                    prevBtn.disabled = (index === 0) || (disableBacktracking && inRedemptionMode);
                 }
 
-                document.getElementById('nextBtnLabel').textContent = (index === totalQuestions - 1) ? 'Finish & Submit' :
-                    'Next question';
                 refreshPaletteUI();
             }
 
@@ -485,53 +609,51 @@
                 if (currentIndex > 0) showQuestion(currentIndex - 1);
             }
 
-            function nextQuestion() {
-                if (!isCurrentQuestionAnswered()) {
-                    showQuestionError(true);
-                    return;
-                }
-                showQuestionError(false);
-                if (currentIndex < totalQuestions - 1) {
-                    showQuestion(currentIndex + 1);
-                } else {
-                    openSubmitModal();
-                }
-            }
-
             function refreshPaletteUI() {
                 let answeredCount = 0;
 
                 document.querySelectorAll('.palette-btn').forEach(btn => {
                     const idx = Number(btn.dataset.paletteIndex);
                     const qId = btn.dataset.questionId;
-                    const val = answersMap[qId];
-                    const isAnswered = val !== undefined && val !== null && String(val).trim() !== '';
-                    const isLockedPast = disableBacktracking && idx < currentIndex;
+                    const answered = isQuestionAnswered(qId);
+                    const isSkipped = !answered && skippedQueue.includes(idx);
 
-                    if (isAnswered) answeredCount++;
+                    if (answered) answeredCount++;
 
-                    btn.disabled = isLockedPast;
+                    btn.disabled = false;
                     btn.className = 'palette-btn py-2 rounded-xl transition ';
 
-                    if (isLockedPast) {
-                        btn.className += 'bg-slate-100 text-slate-400 opacity-50 cursor-not-allowed';
-                    } else if (idx === currentIndex) {
+                    if (idx === currentIndex) {
                         btn.className += 'bg-[#11422d] text-white ring-2 ring-emerald-600 shadow-xs';
-                    } else if (isAnswered) {
+                    } else if (answered) {
                         btn.className += 'bg-emerald-100/70 text-[#11422d] hover:bg-emerald-200';
+                    } else if (isSkipped) {
+                        btn.className += 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200';
                     } else {
                         btn.className += 'bg-slate-100 text-slate-600 hover:bg-slate-200';
                     }
+
+                    if (disableBacktracking && !inRedemptionMode && idx < currentIndex) {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
                 });
 
-                document.getElementById('answeredCountText').textContent = `${answeredCount} / ${totalQuestions} Answered`;
-                document.getElementById('modalSummaryText').textContent =
-                    `You answered ${answeredCount} of ${totalQuestions} questions. You can't change your answers after submitting.`;
+                const answeredEl = document.getElementById('answeredCountText');
+                const summaryEl = document.getElementById('modalSummaryText');
+                if (answeredEl) answeredEl.textContent = `${answeredCount} / ${totalQuestions} Answered`;
+                if (summaryEl) {
+                    summaryEl.textContent =
+                        `You answered ${answeredCount} of ${totalQuestions} questions. You can't change your answers after submitting.`;
+                }
+                updateNavigationButtons();
             }
 
             function persistAnswer(questionId, value) {
                 answersMap[questionId] = value;
                 if (String(value).trim() !== '') {
+                    const idx = questionIds.indexOf(String(questionId));
+                    if (idx !== -1) removeFromSkippedQueue(idx);
                     showQuestionError(false);
                 }
                 refreshPaletteUI();
@@ -567,6 +689,8 @@
             function handleTextAnswerChange(questionId, value) {
                 answersMap[questionId] = value;
                 if (String(value).trim() !== '') {
+                    const idx = questionIds.indexOf(String(questionId));
+                    if (idx !== -1) removeFromSkippedQueue(idx);
                     showQuestionError(false);
                 }
                 refreshPaletteUI();
@@ -578,7 +702,7 @@
             function startExamTimer() {
                 if (timerInterval) clearInterval(timerInterval);
 
-                const updateDisplay = () => {
+                    const updateDisplay = () => {
                     const pureSeconds = Math.max(0, Math.floor(remainingSeconds));
                     const mins = String(Math.floor(pureSeconds / 60)).padStart(2, '0');
                     const secs = String(pureSeconds % 60).padStart(2, '0');
@@ -694,11 +818,7 @@
 
                 // Jump to first unanswered question and block incomplete submission
                 const cards = Array.from(document.querySelectorAll('.question-card'));
-                const firstUnanswered = cards.find(card => {
-                    const qId = card.dataset.questionId;
-                    const val = answersMap[qId];
-                    return val === undefined || val === null || String(val).trim() === '';
-                });
+                const firstUnanswered = cards.find(card => !isQuestionAnswered(card.dataset.questionId));
 
                 if (firstUnanswered) {
                     const targetIdx = Number(firstUnanswered.dataset.index);

@@ -65,7 +65,8 @@ class TeacherResultController extends Controller
                 return $ans;
             });
 
-        $transmuted = TransmutationService::transmute((int) ($attempt->score ?? 0), (int) ($attempt->total_points ?? 0));
+               $viewName = collect(['teacher.attempt_detail', 'teacher.quiz_attempt', 'teacher.attempt'])
+            ->first(fn($v) => view()->exists($v)) ?? 'teacher.attempt';
 
         $viewName = view()->exists('teacher.attempt')
             ? 'teacher.attempt'
@@ -73,9 +74,7 @@ class TeacherResultController extends Controller
 
         return view($viewName, [
             'attempt'    => $attempt,
-            'answers'    => $answers,
-            'transmuted' => $transmuted,
-            'passed'     => $transmuted >= 75,
+            'answers'    => $answers
         ]);
     }
 
@@ -96,7 +95,7 @@ class TeacherResultController extends Controller
         $payload          = $reportController->prepareSingleQuizPayload($quiz, $teacher);
         $csvContent       = $reportController->generateCsv($payload);
         $pdfContent       = Pdf::loadView('teacher.reports_pdf', ['quizReports' => [$payload]])
-            ->setPaper('a4', 'portrait')
+            ->setPaper('a4', 'landscape')
             ->output();
 
         $safeSlug = preg_replace('/[^A-Za-z0-9_-]/', '_', $quiz->title ?: 'quiz_report');

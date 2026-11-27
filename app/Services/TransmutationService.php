@@ -66,29 +66,36 @@ class TransmutationService
 
         // Map numeric indices (0,1,2,3) to letters (A,B,C,D) for display
         $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        $cleanTerm = fn($text) => preg_replace('/^[A-Fa-f][\.\)]\s*/', '', trim((string) $text));
 
-        // Case 1: Stored answer is a key directly in $options
-        if (array_key_exists($answer, $options)) {
-            $pos   = array_search($answer, array_keys($options), true);
-            $label = is_string($answer) && ctype_alpha($answer) ? strtoupper($answer) : ($letters[$pos] ?? $answer);
-            $term  = trim((string) $options[$answer]);
-            return "{$label} - {$term}";
+        // Case-insensitive associative key match (e.g. "A" or "a")
+        $upperOptions = [];
+        foreach ($options as $k => $v) {
+            $upperOptions[is_string($k) ? strtoupper($k) : $k] = $v;
         }
 
-        // Case 2: Stored answer is a letter ("B") while $options is 0-indexed list
+        $upperAnswer = strtoupper($answer);
+        if (array_key_exists($upperAnswer, $upperOptions)) {
+            $pos   = array_search($upperAnswer, array_keys($upperOptions), true);
+            $label = is_string($upperAnswer) && ctype_alpha($upperAnswer) ? $upperAnswer : ($letters[$pos] ?? $answer);
+            return $label . ' - ' . $cleanTerm($upperOptions[$upperAnswer]);
+        }
+
+        // Letter answer ("B") mapped against 0-indexed array [0, 1, 2, 3]
         if (ctype_alpha($answer) && strlen($answer) === 1) {
-            $idx = ord(strtoupper($answer)) - 65;
+            $idx = ord($upperAnswer) - 65;
             if (array_key_exists($idx, $options)) {
-                return strtoupper($answer) . ' - ' . trim((string) $options[$idx]);
+                return $upperAnswer . ' - ' . $cleanTerm($options[$idx]);
             }
         }
 
-        // Case 3: Stored answer is the term text; find its letter
+        // Answer already contains term text; prepend matching letter
         $i = 0;
         foreach ($options as $optKey => $optTerm) {
-            if (strcasecmp(trim((string) $optTerm), $answer) === 0) {
+            $termText = $cleanTerm($optTerm);
+            if (strcasecmp($termText, $cleanTerm($answer)) === 0) {
                 $label = is_string($optKey) && ctype_alpha($optKey) ? strtoupper($optKey) : ($letters[$i] ?? (string) ($i + 1));
-                return "{$label} - " . trim((string) $optTerm);
+                return $label . ' - ' . $termText;
             }
             $i++;
         }

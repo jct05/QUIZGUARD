@@ -301,9 +301,14 @@ class AttemptController extends Controller
             $reviewAnswers = DB::table('student_answers')
                 ->join('questions', 'student_answers.question_id', '=', 'questions.question_id')
                 ->where('student_answers.attempt_id', $attempt->attempt_id)
-                ->select('student_answers.*', 'questions.question_text', 'questions.correct_answers', 'questions.points')
+                ->select('student_answers.*', 'questions.question_text', 'questions.correct_answers', 'questions.options', 'questions.points')
                 ->orderBy('student_answers.answer_id')
-                ->get();
+                ->get()
+                ->map(function ($ans) {
+                    $ans->formatted_student_answer = \App\Services\TransmutationService::formatOptionLabel($ans->student_answer, $ans->options);
+                    $ans->formatted_correct_answer = \App\Services\TransmutationService::formatOptionLabel($ans->correct_answers, $ans->options);
+                    return $ans;
+                });
         }
 
         return view('student.submitted', [
@@ -333,9 +338,14 @@ class AttemptController extends Controller
             $answers = DB::table('student_answers')
                 ->join('questions', 'student_answers.question_id', '=', 'questions.question_id')
                 ->whereIn('student_answers.attempt_id', $reviewableAttemptIds)
-                ->select('student_answers.*', 'questions.question_text', 'questions.correct_answers', 'questions.points')
+                ->select('student_answers.*', 'questions.question_text', 'questions.correct_answers', 'questions.options', 'questions.points')
                 ->orderBy('student_answers.answer_id')
                 ->get()
+                ->map(function ($ans) {
+                    $ans->formatted_student_answer = \App\Services\TransmutationService::formatOptionLabel($ans->student_answer, $ans->options);
+                    $ans->formatted_correct_answer = \App\Services\TransmutationService::formatOptionLabel($ans->correct_answers, $ans->options);
+                    return $ans;
+                })
                 ->groupBy('attempt_id');
 
             foreach ($answers as $attId => $rows) {
