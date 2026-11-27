@@ -10,7 +10,7 @@
     </div>
 
     <!-- 1. SEARCH & FILTERS BAR -->
-    <form method="GET" action="{{ route('admin.logs') }}"
+    <form id="logs-filter-form" method="GET" action="{{ route('admin.logs') }}"
         class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <!-- Search Input -->
         <div class="relative w-full lg:w-80">
@@ -26,12 +26,20 @@
 
         <!-- Filters -->
         <div class="flex flex-wrap items-center gap-3">
-            <input type="date" name="from" value="{{ request('from') }}" title="From"
-                class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 shadow-xs">
-            <input type="date" name="to" value="{{ request('to') }}" title="To"
-                class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 shadow-xs">
+            <label class="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-500 shadow-xs focus-within:border-emerald-600 transition">
+                <span class="font-medium text-slate-400">From:</span>
+                <input type="date" id="filter-from" name="from" value="{{ request('from') }}"
+                    max="{{ request('to') ?: '' }}" title="From date"
+                    class="bg-transparent text-xs text-slate-700 focus:outline-none">
+            </label>
+            <label class="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-500 shadow-xs focus-within:border-emerald-600 transition">
+                <span class="font-medium text-slate-400">To:</span>
+                <input type="date" id="filter-to" name="to" value="{{ request('to') }}"
+                    min="{{ request('from') ?: '' }}" title="To date"
+                    class="bg-transparent text-xs text-slate-700 focus:outline-none">
+            </label>
 
-            <select name="role"
+            <select name="role" onchange="this.form.submit()"
                 class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 shadow-xs">
                 <option value="">Role: All</option>
                 @foreach (['student', 'teacher', 'admin'] as $role)
@@ -40,7 +48,7 @@
                 @endforeach
             </select>
 
-            <select name="action"
+            <select name="action" onchange="this.form.submit()"
                 class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 shadow-xs">
                 <option value="">Action: All</option>
                 @foreach ($actions as $action)
@@ -146,4 +154,30 @@
     </div>
 </div>
     </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('logs-filter-form');
+            const fromInput = document.getElementById('filter-from');
+            const toInput = document.getElementById('filter-to');
+
+            if (!form || !fromInput || !toInput) return;
+
+            fromInput.addEventListener('change', function () {
+                toInput.min = fromInput.value || '';
+                if (toInput.value && fromInput.value && fromInput.value > toInput.value) {
+                    toInput.value = fromInput.value;
+                }
+                form.submit();
+            });
+
+            toInput.addEventListener('change', function () {
+                fromInput.max = toInput.value || '';
+                if (fromInput.value && toInput.value && toInput.value < fromInput.value) {
+                    fromInput.value = toInput.value;
+                }
+                form.submit();
+            });
+        })();
+    </script>
 @endsection

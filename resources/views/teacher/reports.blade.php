@@ -112,6 +112,9 @@
                             <th class="px-5 py-3.5">Submitted</th>
                             <th class="px-5 py-3.5">Passed</th>
                             <th class="px-5 py-3.5">Highest Score</th>
+                            <th class="px-5 py-3.5">Avg Min</th>
+                            <th class="px-5 py-3.5">Avg Max</th>
+                            <th class="px-5 py-3.5">Average</th>
                             <th class="px-5 py-3.5 text-right">Details</th>
                         </tr>
                     </thead>
@@ -141,6 +144,20 @@
                                 <td class="px-5 py-4 font-semibold text-emerald-700">{{ $item['passed_count'] }} /
                                     {{ $item['submitted_count'] }}</td>
                                 <td class="px-5 py-4 font-bold text-[#11422d]">{{ $item['highest_score'] }} pts</td>
+                                <td class="px-5 py-4 font-semibold text-slate-700">
+                                    {{ $item['submitted_count'] > 0 ? $item['min_score'] . ' pts' : '—' }}
+                                </td>
+                                <td class="px-5 py-4 font-semibold text-slate-700">
+                                    {{ $item['submitted_count'] > 0 ? $item['max_score'] . ' pts' : '—' }}
+                                </td>
+                                <td class="px-5 py-4 font-bold text-slate-800">
+                                    @if ($item['submitted_count'] > 0)
+                                        {{ $item['avg_score'] }} pts
+                                        <span class="block text-[11px] font-medium text-slate-400">{{ $item['avg_pct'] }}%</span>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-4 text-right">
                                     <a href="{{ url('/teacher/quizzes/' . $q->quiz_id . '/results') }}"
                                         class="text-xs font-bold text-[#11422d] hover:underline">
@@ -150,7 +167,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-10 text-center text-slate-400">
+                                <td colspan="10" class="px-5 py-10 text-center text-slate-400">
                                     No quizzes found matching your filters.
                                 </td>
                             </tr>

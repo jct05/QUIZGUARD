@@ -27,9 +27,8 @@
     <!-- Top Dedicated Exam Header (Desktop & Mobile) -->
     <div class="bg-[#11422d] text-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-xs">
-                <span class="text-[#11422d] font-black text-lg">Q</span>
-            </div>
+            <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 bg-[#0f3422]">
             <div>
                 <span class="text-xs font-black tracking-wider uppercase text-white block leading-tight">DWCC
                     QUIZGUARD</span>

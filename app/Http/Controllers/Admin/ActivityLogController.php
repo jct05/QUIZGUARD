@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
@@ -35,12 +36,38 @@ class ActivityLogController extends Controller
             });
         }
 
-         // date range
+        // Date range filter (inclusive of full start/end days; swaps if reversed)
+        $fromDate = null;
+        $toDate = null;
+
         if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
+            try {
+                $fromDate = Carbon::parse($request->from)->startOfDay();
+            } catch (\Throwable $e) {
+                $fromDate = null;
+            }
         }
+
         if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
+            try {
+                $toDate = Carbon::parse($request->to)->endOfDay();
+            } catch (\Throwable $e) {
+                $toDate = null;
+            }
+        }
+
+        if ($fromDate && $toDate && $fromDate->gt($toDate)) {
+            $swappedFrom = $toDate->copy()->startOfDay();
+            $swappedTo = $fromDate->copy()->endOfDay();
+            $fromDate = $swappedFrom;
+            $toDate = $swappedTo;
+        }
+
+        if ($fromDate) {
+            $query->where('created_at', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $query->where('created_at', '<=', $toDate);
         }
 
         // ordered by newest and limit of 20 rows

@@ -56,27 +56,78 @@
             </div>
         </div>
 
-        <!-- Visual Charts: Scores & Correct Answers Per Question -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-extrabold text-slate-900">Student Scores Overview (pts)</h2>
-                    <span class="text-[11px] font-semibold text-slate-400">Passing: {{ $quiz->passing_score ?? 0 }}
-                        pts</span>
+        <!-- Visual Charts: Left (Scores + Question Correct stacked), Right (Box Plot) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div class="lg:col-span-6 flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-extrabold text-slate-900">Student Scores Overview (pts)</h2>
+                        <span class="text-[11px] font-semibold text-slate-400">Passing: {{ $quiz->passing_score ?? 0 }}
+                            pts</span>
+                    </div>
+                    <div class="h-56">
+                        <canvas id="scoresChartCanvas"></canvas>
+                    </div>
                 </div>
-                <div class="h-60">
-                    <canvas id="scoresChartCanvas"></canvas>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-extrabold text-slate-900">Students Correct per Question</h2>
+                        <span class="text-[11px] font-semibold text-slate-400">Out of {{ $submittedCount }}
+                            {{ $submittedCount === 1 ? 'student' : 'students' }}</span>
+                    </div>
+                    <div class="h-56">
+                        <canvas id="questionCorrectChartCanvas"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-extrabold text-slate-900">Students Correct per Question</h2>
-                    <span class="text-[11px] font-semibold text-slate-400">Out of {{ $submittedCount }}
-                        {{ $submittedCount === 1 ? 'student' : 'students' }}</span>
-                </div>
-                <div class="h-60">
-                    <canvas id="questionCorrectChartCanvas"></canvas>
+            <div class="lg:col-span-6 flex">
+                <div class="w-full bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-extrabold text-slate-900">Score Distribution (Box Plot)</h2>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Spread of highest scores per student</p>
+                        </div>
+                        <span class="text-[11px] font-semibold text-slate-400">Out of {{ $maxPoints }} pts</span>
+                    </div>
+
+                    @if ($submittedCount > 0)
+                        <div class="flex-1 min-h-[380px]">
+                            <canvas id="scoreBoxPlotCanvas"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-3 border-t border-slate-100 text-center">
+                            <div class="bg-slate-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-slate-400">Min</span>
+                                <span class="text-xs font-extrabold text-slate-800">{{ $boxPlotStats['raw_min'] }}</span>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-slate-400">Q1</span>
+                                <span class="text-xs font-extrabold text-slate-800">{{ $boxPlotStats['q1'] }}</span>
+                            </div>
+                            <div class="bg-emerald-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-emerald-700">Median</span>
+                                <span class="text-xs font-extrabold text-[#11422d]">{{ $boxPlotStats['median'] }}</span>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-slate-400">Q3</span>
+                                <span class="text-xs font-extrabold text-slate-800">{{ $boxPlotStats['q3'] }}</span>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-slate-400">Max</span>
+                                <span class="text-xs font-extrabold text-slate-800">{{ $boxPlotStats['raw_max'] }}</span>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl py-2 px-2">
+                                <span class="block text-[10px] font-bold uppercase text-slate-400">Avg</span>
+                                <span class="text-xs font-extrabold text-slate-800">{{ $boxPlotStats['mean'] }}</span>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex-1 min-h-[380px] flex items-center justify-center text-xs text-slate-400">
+                            No student submissions yet to render a box plot.
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -286,9 +337,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4/build/index.umd.min.js"></script>
     <script>
         const studentRows = @json($studentRows);
         const questionStats = @json($questionStats);
+        const boxPlotStats = @json($boxPlotStats);
         const submittedTotal = {{ (int) $submittedCount }};
 
         // Render Chart.js visualizations for scores and correct counts
@@ -351,6 +404,67 @@
                 }
             }
         });
+
+        const boxPlotCanvas = document.getElementById('scoreBoxPlotCanvas');
+        if (boxPlotCanvas && submittedTotal > 0) {
+            new Chart(boxPlotCanvas, {
+                type: 'boxplot',
+                data: {
+                    labels: ['{{ $quiz->title }}'],
+                    datasets: [{
+                        label: 'Score (pts)',
+                        backgroundColor: 'rgba(17, 66, 45, 0.22)',
+                        borderColor: '#11422d',
+                        borderWidth: 2,
+                        outlierBackgroundColor: '#e11d48',
+                        outlierBorderColor: '#be123c',
+                        outlierRadius: 4,
+                        itemRadius: 3,
+                        itemBackgroundColor: '#185c3f',
+                        meanBackgroundColor: '#0d3423',
+                        meanBorderColor: '#0d3423',
+                        data: [boxPlotStats.scores],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function() {
+                                    const parts = [
+                                        `Min: ${boxPlotStats.raw_min} pts`,
+                                        `Q1: ${boxPlotStats.q1} pts`,
+                                        `Median: ${boxPlotStats.median} pts`,
+                                        `Q3: ${boxPlotStats.q3} pts`,
+                                        `Max: ${boxPlotStats.raw_max} pts`,
+                                        `Mean: ${boxPlotStats.mean} pts`
+                                    ];
+                                    if (boxPlotStats.outliers && boxPlotStats.outliers.length) {
+                                        parts.push(`Outliers: ${boxPlotStats.outliers.join(', ')}`);
+                                    }
+                                    return parts;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(1, {{ (int) $maxPoints }}),
+                            title: {
+                                display: true,
+                                text: 'Points'
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         // Highlight selected question column and display accuracy details
         function selectQuestionHighlight(qId, btn) {

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Login') - DWCC QuizGuard</title>
+    <link rel="icon" type="image/webp" href="{{ asset('images/quizguard-logo.webp') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,9 +27,8 @@
 
     <div class="hidden lg:flex w-1/2 bg-[#11422d] text-white flex-col justify-between p-12">
         <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-md shrink-0">
-                <span class="text-[#11422d] font-black text-xl tracking-tight">Q</span>
-            </div>
+            <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                class="w-11 h-11 rounded-xl object-cover shadow-md shrink-0 bg-[#0f3422]">
             <div>
                 <h1 class="text-sm font-bold tracking-wide uppercase leading-tight">DWCC QuizGuard</h1>
                 <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">Divine Word College of Calapan</p>
@@ -53,9 +53,8 @@
 
             <!-- logo for small screens -->
             <div class="lg:hidden flex items-center gap-3 mb-8">
-                <div class="w-10 h-10 bg-[#11422d] rounded-xl flex items-center justify-center shadow-md shrink-0">
-                    <span class="text-white font-black text-xl tracking-tight">Q</span>
-                </div>
+                <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                    class="w-10 h-10 rounded-xl object-cover shadow-md shrink-0 bg-[#0f3422]">
                 <h1 class="text-sm font-bold tracking-wide uppercase text-slate-900">DWCC QuizGuard</h1>
             </div>
 

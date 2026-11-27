@@ -237,6 +237,7 @@ class TeacherResultController extends Controller
         $passedCount     = count(array_filter($studentRows, fn($r) => $r['passed']));
         $passingRate     = $submittedCount > 0 ? round(($passedCount / $submittedCount) * 100) : 0;
         $overallAvgQSec  = $submittedCount > 0 ? (int) round(array_sum(array_column($studentRows, 'avg_time_sec')) / $submittedCount) : 0;
+        $boxPlotStats    = $this->computeBoxPlotStats(array_column($studentRows, 'score'));
 
         return [
             'quiz'             => $quiz,
@@ -252,6 +253,81 @@ class TeacherResultController extends Controller
             'passingRate'      => $passingRate,
             'overallAvgQLabel' => $this->formatDuration($overallAvgQSec),
             'maxViolations'    => (int) ($quiz->max_violation ?? 3),
+            'boxPlotStats'     => $boxPlotStats,
+        ];
+    }
+
+    // Compute 5-number summary, IQR, fences, and outliers for score box plot
+    private function computeBoxPlotStats(array $scores): array
+    {
+        $n = count($scores);
+        if ($n === 0) {
+            return [
+                'count'    => 0,
+                'min'      => null,
+                'q1'       => null,
+                'median'   => null,
+                'q3'       => null,
+                'max'      => null,
+                'mean'     => null,
+                'iqr'      => null,
+                'raw_min'  => null,
+                'raw_max'  => null,
+                'outliers' => [],
+                'scores'   => [],
+            ];
+        }
+
+        $sorted = array_map('floatval', $scores);
+        sort($sorted, SORT_NUMERIC);
+
+        $percentile = function (array $arr, float $p): float {
+            $count = count($arr);
+            if ($count === 1) {
+                return $arr[0];
+            }
+            $pos   = ($count - 1) * $p;
+            $lower = (int) floor($pos);
+            $upper = (int) ceil($pos);
+            $frac  = $pos - $lower;
+            return $arr[$lower] + ($arr[$upper] - $arr[$lower]) * $frac;
+        };
+
+        $q1     = round($percentile($sorted, 0.25), 2);
+        $median = round($percentile($sorted, 0.50), 2);
+        $q3     = round($percentile($sorted, 0.75), 2);
+        $iqr    = round($q3 - $q1, 2);
+        $mean   = round(array_sum($sorted) / $n, 2);
+
+        $lowerFence = $q1 - 1.5 * $iqr;
+        $upperFence = $q3 + 1.5 * $iqr;
+
+        $inliers  = [];
+        $outliers = [];
+        foreach ($sorted as $val) {
+            if ($val < $lowerFence || $val > $upperFence) {
+                $outliers[] = $val;
+            } else {
+                $inliers[] = $val;
+            }
+        }
+
+        $whiskerMin = !empty($inliers) ? min($inliers) : $sorted[0];
+        $whiskerMax = !empty($inliers) ? max($inliers) : $sorted[$n - 1];
+
+        return [
+            'count'    => $n,
+            'min'      => round($whiskerMin, 2),
+            'q1'       => $q1,
+            'median'   => $median,
+            'q3'       => $q3,
+            'max'      => round($whiskerMax, 2),
+            'mean'     => $mean,
+            'iqr'      => $iqr,
+            'raw_min'  => round($sorted[0], 2),
+            'raw_max'  => round($sorted[$n - 1], 2),
+            'outliers' => $outliers,
+            'scores'   => $sorted,
         ];
     }
 

@@ -7,6 +7,7 @@
     <!-- Include CSRF token for secure AJAX requests -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Student Portal') - DWCC QuizGuard</title>
+    <link rel="icon" type="image/webp" href="{{ asset('images/quizguard-logo.webp') }}">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,9 +75,8 @@
                 class="bg-white rounded-2xl border border-slate-200/80 px-6 py-3.5 shadow-xs flex items-center justify-between">
                 <!-- Left: Brand Logo -->
                 <a href="{{ $dashboardUrl }}" class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-[#11422d] rounded-xl flex items-center justify-center shadow-xs">
-                        <span class="text-white font-black text-lg">Q</span>
-                    </div>
+                    <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                        class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 bg-[#0f3422]">
                     <div>
                         <h1 class="text-xs font-black tracking-wider uppercase text-slate-900 leading-tight">DWCC
                             QuizGuard</h1>
