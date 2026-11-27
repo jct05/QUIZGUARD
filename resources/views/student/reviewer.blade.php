@@ -20,9 +20,8 @@
     <!-- Top Dark Green Banner -->
     <div class="bg-[#11422d] text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm mb-6">
         <div class="flex items-center gap-2.5 mb-4 md:hidden">
-            <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs">
-                <span class="text-[#11422d] font-black text-base">Q</span>
-            </div>
+            <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                class="w-8 h-8 rounded-lg object-cover shadow-xs shrink-0 bg-[#0f3422]">
             <span class="text-xs font-bold tracking-wider uppercase text-white">DWCC QUIZGUARD</span>
         </div>
 

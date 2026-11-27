@@ -35,9 +35,8 @@
         <!-- Top Dark Green Header -->
         <div class="bg-[#11422d] text-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-xs">
-                    <span class="text-[#11422d] font-black text-base">Q</span>
-                </div>
+                <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                    class="w-8 h-8 rounded-lg object-cover shadow-xs shrink-0 bg-[#0f3422]">
                 <span class="text-xs font-bold tracking-wider uppercase text-white">DWCC QUIZGUARD</span>
             </div>
             <span

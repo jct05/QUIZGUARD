@@ -159,7 +159,13 @@ class TeacherReportController extends Controller
             $attempts  = Attempt::where('quiz_id', $quiz->quiz_id)->where('status', '!=', 'in_progress')->get();
             $submitted = $attempts->count();
             $highest   = $submitted > 0 ? (int) $attempts->max('score') : 0;
+            $lowest    = $submitted > 0 ? (int) $attempts->min('score') : 0;
+            $avgScore  = $submitted > 0 ? round((float) $attempts->avg('score'), 1) : 0;
             $maxPts    = $submitted > 0 ? (int) $attempts->max('total_points') : 0;
+
+            $avgPct = $submitted > 0
+                ? round($attempts->avg(fn($a) => TransmutationService::transmute((int) $a->score, (int) $a->total_points)), 1)
+                : 0;
 
             $passed = $attempts->filter(function ($a) {
                 $transmuted = TransmutationService::transmute((int) $a->score, (int) $a->total_points);
@@ -171,6 +177,10 @@ class TeacherReportController extends Controller
                 'submitted_count'  => $submitted,
                 'passed_count'     => $passed,
                 'highest_score'    => $highest,
+                'min_score'        => $lowest,
+                'max_score'        => $highest,
+                'avg_score'        => $avgScore,
+                'avg_pct'          => $avgPct,
                 'max_points'       => $maxPts,
                 'total_violations' => (int) $attempts->sum('violation_count'),
             ];

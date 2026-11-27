@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Teacher') - DWCC QuizGuard</title>
+    <link rel="icon" type="image/webp" href="{{ asset('images/quizguard-logo.webp') }}">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,9 +55,8 @@
         <div>
             <!-- DWCC Brand / Logo Section -->
             <div class="flex items-center gap-3 px-2 py-3 mb-6">
-                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md shrink-0">
-                    <span class="text-[#11422d] font-black text-xl tracking-tight">Q</span>
-                </div>
+                <img src="{{ asset('images/quizguard-logo.webp') }}" alt="DWCC QuizGuard Logo"
+                    class="w-10 h-10 rounded-xl object-cover shadow-md shrink-0 bg-[#0f3422]">
                 <div>
                     <h1 class="text-sm font-bold tracking-wide uppercase leading-tight text-white">DWCC QuizGuard</h1>
                     <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">
