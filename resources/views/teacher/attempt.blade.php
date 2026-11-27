@@ -9,14 +9,8 @@
         $studentName = $student
             ? trim($student->first_name . ' ' . $student->last_name)
             : 'Student #' . $attempt->student_id;
-        $pct = $attempt->total_points > 0 ? round(($attempt->score / $attempt->total_points) * 100) : 0;
-        $passing = (int) ($quiz->passing_score ?? 0);
-        $passed =
-            $passing <= 0
-                ? true
-                : ($attempt->total_points > 0 && $passing <= $attempt->total_points
-                    ? $attempt->score >= $passing
-                    : $pct >= $passing);
+        $pct = \App\Services\TransmutationService::transmute((int) $attempt->score, (int) $attempt->total_points);
+        $passed = $pct >= 75;
         $violations = $attempt->violationLogs ?? collect();
     @endphp
 
@@ -102,12 +96,11 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                                 <div class="rounded-xl bg-slate-50 border border-slate-200/70 px-3 py-2">
                                     <span class="text-[10px] uppercase font-bold text-slate-400 block">Student Answer</span>
-                                    <span class="font-semibold text-slate-800">{{ $ans->student_answer ?: '—' }}</span>
+                                    <span class="font-semibold text-slate-800">{{ $ans->formatted_student_answer ?? ($ans->student_answer ?: '—') }}</span>
                                 </div>
                                 <div class="rounded-xl bg-emerald-50/50 border border-emerald-200/60 px-3 py-2">
-                                    <span class="text-[10px] uppercase font-bold text-emerald-700 block">Correct
-                                        Answer</span>
-                                    <span class="font-semibold text-emerald-900">{{ $ans->correct_answers }}</span>
+                                    <span class="text-[10px] uppercase font-bold text-emerald-700 block">Correct Answer</span>
+                                    <span class="font-semibold text-emerald-900">{{ $ans->formatted_correct_answer ?? $ans->correct_answers }}</span>
                                 </div>
                             </div>
                         </div>

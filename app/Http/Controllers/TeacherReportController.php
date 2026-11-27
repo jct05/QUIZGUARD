@@ -81,7 +81,7 @@ class TeacherReportController extends Controller
 
         $quizReports = $quizzes->map(fn($quiz) => $this->prepareSingleQuizPayload($quiz, $teacher))->all();
         $pdfContent  = Pdf::loadView('teacher.reports_pdf', ['quizReports' => $quizReports])
-            ->setPaper('a4', 'portrait')
+            ->setPaper('a4', 'landscape')
             ->output();
 
         $quizNamesLabel = $quizzes->pluck('title')->filter()->unique()->implode(', ');

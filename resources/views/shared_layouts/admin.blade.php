@@ -55,7 +55,8 @@
                     class="w-10 h-10 rounded-xl object-cover shadow-md shrink-0 bg-[#0f3422]">
                 <div>
                     <h1 class="text-sm font-bold tracking-wide uppercase leading-tight text-white">DWCC QuizGuard</h1>
-                    <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">Divine Word College of Calapan</p>
+                    <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">Divine Word
+                        College of Calapan</p>
                 </div>
             </div>
 
@@ -164,6 +165,37 @@
         </main>
     </div>
 
-</body>
+    <script>
+        // Block browser context menu right click across pages
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
 
+        // Block keyboard shortcuts for developer tools and source
+        document.addEventListener('keydown', function(event) {
+            const key = (event.key || '').toUpperCase();
+            const ctrlOrMeta = event.ctrlKey || event.metaKey;
+
+            // Block F12
+            if (key === 'F12' || event.keyCode === 123) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+Shift+I/J/C/K (Windows/Linux) and Cmd+Opt+I/J/C/U (macOS)
+            if ((ctrlOrMeta && event.shiftKey && ['I', 'J', 'C', 'K'].includes(key)) ||
+                (event.metaKey && event.altKey && ['I', 'J', 'C', 'U'].includes(key))) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+U / Cmd+U (View Source) and Ctrl+S / Cmd+S (Save Page)
+            if (ctrlOrMeta && ['U', 'S'].includes(key)) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
+
+</body>
 </html>

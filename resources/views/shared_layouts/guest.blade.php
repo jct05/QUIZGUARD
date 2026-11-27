@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,14 +16,28 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { dwcc: { green: '#11422d', dark: '#0d3423', light: '#185c3f', sage: '#e2ece7' } }
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        dwcc: {
+                            green: '#11422d',
+                            dark: '#0d3423',
+                            light: '#185c3f',
+                            sage: '#e2ece7'
+                        }
+                    }
                 }
             }
         }
     </script>
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
+
 <body class="bg-[#f8fafc] text-slate-800 antialiased min-h-screen flex">
 
     <div class="hidden lg:flex w-1/2 bg-[#11422d] text-white flex-col justify-between p-12">
@@ -31,13 +46,15 @@
                 class="w-11 h-11 rounded-xl object-cover shadow-md shrink-0 bg-[#0f3422]">
             <div>
                 <h1 class="text-sm font-bold tracking-wide uppercase leading-tight">DWCC QuizGuard</h1>
-                <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">Divine Word College of Calapan</p>
+                <p class="text-[9px] text-emerald-200/70 font-medium tracking-wider uppercase mt-0.5">Divine Word
+                    College of Calapan</p>
             </div>
         </div>
 
         <div>
             <h2 class="text-3xl font-bold leading-tight tracking-tight">Fair quizzes,<br>honest results.</h2>
-            <p class="text-sm text-emerald-100/70 mt-4 max-w-sm">Online quizzes for DWCC students, with randomized questions and monitored sessions.</p>
+            <p class="text-sm text-emerald-100/70 mt-4 max-w-sm">Online quizzes for DWCC students, with randomized
+                questions and monitored sessions.</p>
             <ul class="mt-8 space-y-3 text-sm text-emerald-100/80">
                 <li>Randomized questions and choices for every student</li>
                 <li>Monitored sessions with automatic submission</li>
@@ -59,11 +76,14 @@
             </div>
 
             @if (session('success'))
-                <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs border border-emerald-200">{{ session('success') }}</div>
+                <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs border border-emerald-200">
+                    {{ session('success') }}</div>
             @endif
             @if ($errors->any())
                 <div class="mb-4 px-4 py-3 rounded-xl bg-rose-50 text-rose-700 text-xs border border-rose-200">
-                    @foreach ($errors->all() as $error) <p>{{ $error }}</p> @endforeach
+                    @foreach ($errors->all() as $error)
+                        <p>{{ $error }}</p>
+                    @endforeach
                 </div>
             @endif
 
@@ -71,5 +91,38 @@
         </div>
     </div>
 
+    <script>
+        // Block browser context menu right click across pages
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        // Block keyboard shortcuts for developer tools and source
+        document.addEventListener('keydown', function(event) {
+            const key = (event.key || '').toUpperCase();
+            const ctrlOrMeta = event.ctrlKey || event.metaKey;
+
+            // Block F12
+            if (key === 'F12' || event.keyCode === 123) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+Shift+I/J/C/K (Windows/Linux) and Cmd+Opt+I/J/C/U (macOS)
+            if ((ctrlOrMeta && event.shiftKey && ['I', 'J', 'C', 'K'].includes(key)) ||
+                (event.metaKey && event.altKey && ['I', 'J', 'C', 'U'].includes(key))) {
+                event.preventDefault();
+                return false;
+            }
+
+            // Block Ctrl+U / Cmd+U (View Source) and Ctrl+S / Cmd+S (Save Page)
+            if (ctrlOrMeta && ['U', 'S'].includes(key)) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    </script>
+
 </body>
+
 </html>
