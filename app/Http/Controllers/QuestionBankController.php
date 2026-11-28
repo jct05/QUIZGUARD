@@ -225,14 +225,9 @@ class QuestionBankController extends Controller
         }
 
         if ($ext === 'docx') {
-            $zip = new \ZipArchive();
-            if ($zip->open($path) !== true) {
-                return '';
-            }
-            $xml = $zip->getFromName('word/document.xml');
-            $zip->close();
+            $xml = $this->extractDocxDocumentXml($path);
 
-            if ($xml === false) {
+            if ($xml === false || $xml === '') {
                 return '';
             }
 
@@ -244,12 +239,74 @@ class QuestionBankController extends Controller
             try {
                 $parser = new \Smalot\PdfParser\Parser();
                 return $parser->parseFile($path)->getText();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return '';
             }
         }
 
         return '';
+    }
+
+    // Extract word/document.xml using ZipArchive or pure-PHP ZIP fallback when ext-zip is absent.
+    private function extractDocxDocumentXml(string $path): string|false
+    {
+        if (class_exists(\ZipArchive::class)) {
+            $zip = new \ZipArchive();
+            if ($zip->open($path) !== true) {
+                return false;
+            }
+            $xml = $zip->getFromName('word/document.xml');
+            $zip->close();
+            return $xml;
+        }
+
+        $data = @file_get_contents($path);
+        if ($data === false || strlen($data) < 22) {
+            return false;
+        }
+
+        // Locate End of Central Directory (PK\x05\x06) from the end of the archive
+        $eocdPos = strrpos($data, "\x50\x4b\x05\x06");
+        if ($eocdPos === false || $eocdPos + 22 > strlen($data)) {
+            return false;
+        }
+
+        $cdSize   = unpack('V', substr($data, $eocdPos + 12, 4))[1];
+        $cdOffset = unpack('V', substr($data, $eocdPos + 16, 4))[1];
+        $pos      = $cdOffset;
+        $cdEnd    = min(strlen($data), $cdOffset + $cdSize);
+
+        while ($pos + 46 <= $cdEnd && substr($data, $pos, 4) === "\x50\x4b\x01\x02") {
+            $method         = unpack('v', substr($data, $pos + 10, 2))[1];
+            $compressedSize = unpack('V', substr($data, $pos + 20, 4))[1];
+            $nameLen        = unpack('v', substr($data, $pos + 28, 2))[1];
+            $extraLen       = unpack('v', substr($data, $pos + 30, 2))[1];
+            $commentLen     = unpack('v', substr($data, $pos + 32, 2))[1];
+            $localOffset    = unpack('V', substr($data, $pos + 42, 4))[1];
+            $fileName       = substr($data, $pos + 46, $nameLen);
+
+            if ($fileName === 'word/document.xml') {
+                if ($localOffset + 30 > strlen($data) || substr($data, $localOffset, 4) !== "\x50\x4b\x03\x04") {
+                    return false;
+                }
+                $lhNameLen  = unpack('v', substr($data, $localOffset + 26, 2))[1];
+                $lhExtraLen = unpack('v', substr($data, $localOffset + 28, 2))[1];
+                $dataStart  = $localOffset + 30 + $lhNameLen + $lhExtraLen;
+                $compressed = substr($data, $dataStart, $compressedSize);
+
+                if ($method === 0) {
+                    return $compressed;
+                }
+                if ($method === 8 && function_exists('gzinflate')) {
+                    return @gzinflate($compressed);
+                }
+                return false;
+            }
+
+            $pos += 46 + $nameLen + $extraLen + $commentLen;
+        }
+
+        return false;
     }
 
     // Parse extracted text into formatted questions, options, and answers.
