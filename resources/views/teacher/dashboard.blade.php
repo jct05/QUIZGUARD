@@ -20,6 +20,10 @@
             <p class="text-xs text-slate-500 mt-1">Monitor your quizzes today.</p>
         </div>
         <div class="flex items-center gap-3">
+            <span
+                class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[#11422d] text-xs font-bold">
+                Department: {{ auth()->user()->department ?? 'N/A' }}
+            </span>
             <a href="/teacher/question-banks"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-medium transition shadow-xs">Upload
                 Question Bank</a>

@@ -102,6 +102,28 @@ class QuestionBankController extends Controller
             'file'       => 'required|file|mimes:docx,pdf,txt|max:5120',
         ]);
 
+        // Prevent duplicate question bank titles and rapid resubmission
+        $cleanTitle = trim((string) $request->bank_title);
+
+        $duplicateTitle = QuestionBank::where('teacher_id', Auth::id())
+            ->where('subject_id', $request->subject_id)
+            ->whereRaw('LOWER(bank_title) = ?', [strtolower($cleanTitle)])
+            ->exists();
+
+        if ($duplicateTitle) {
+            return back()->withInput()->withErrors([
+                'bank_title' => 'A question bank with this title already exists under the selected subject.',
+            ]);
+        }
+
+        $recentUpload = QuestionBank::where('teacher_id', Auth::id())
+            ->where('uploaded_at', '>=', now()->subSeconds(5))
+            ->exists();
+
+        if ($recentUpload) {
+            return back()->with('error', 'Please wait a moment before importing another question bank.');
+        }
+
         // Verify the chosen subject belongs to this teacher.
         $subject = Subject::where('subject_id', $request->subject_id)
             ->where('teacher_id', Auth::id())

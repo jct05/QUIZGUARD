@@ -5,6 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Models\Quiz;
+use App\Models\Section;
+use App\Models\Subject;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -131,6 +136,7 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::where('user_id', $id)->firstOrFail();
+        $oldDept = $user->department;
 
         // Normalize role and uppercase department before validation
         $request->merge([
@@ -176,6 +182,15 @@ class UserController extends Controller
 
         $user->update($updateData);
 
+        if ($user->role === 'teacher' && $oldDept !== $request->department) {
+            ActivityLog::record(
+                Auth::user()->school_id_num,
+                Auth::user()->role,
+                'DEPARTMENT_CHANGED',
+                "Changed teacher {$user->school_id_num} department from {$oldDept} to {$request->department}"
+            );
+        }
+
         ActivityLog::record(
             Auth::user()->school_id_num,
             Auth::user()->role,
@@ -197,6 +212,25 @@ class UserController extends Controller
 
         if ($user->user_id == Auth::id()) {
             return back()->withErrors(['user' => 'You cannot deactivate your own account.']);
+        }
+
+        // Prevent deactivating teacher with active classes or sessions
+        if ($user->role === 'teacher' && $user->status === 'active') {
+            $hasActiveClasses = Subject::where('teacher_id', $user->user_id)->where('status', 'active')->exists()
+                || Section::where('teacher_id', $user->user_id)->where('status', 'active')->exists()
+                || Quiz::where('teacher_id', $user->user_id)->where('status', 'active')->exists();
+
+            $hasLiveSession = Schema::hasTable('sessions')
+                && DB::table('sessions')
+                ->where('user_id', $user->user_id)
+                ->where('last_activity', '>=', now()->subMinutes(15)->timestamp)
+                ->exists();
+
+            if ($hasActiveClasses || $hasLiveSession) {
+                return back()->withErrors([
+                    'user' => 'Cannot deactivate this teacher while they are currently active or handling active subjects, sections, or quizzes.',
+                ]);
+            }
         }
 
         $user->update(['status' => $user->status === 'active' ? 'inactive' : 'active']);

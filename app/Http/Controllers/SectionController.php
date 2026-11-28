@@ -147,20 +147,18 @@ class SectionController extends Controller
     // Toggle a section status between active and inactive.
     public function toggleStatus($id)
     {
-        $section = Section::where('section_id', $id)
+        $section = Section::with('subject')
+            ->where('section_id', $id)
             ->where('teacher_id', Auth::id())
             ->firstOrFail();
 
-        $section->update([
-            'status' => $section->status === 'active' ? 'inactive' : 'active',
-        ]);
+        $newStatus = $section->status === 'active' ? 'inactive' : 'active';
 
-        ActivityLog::record(
-            Auth::user()->school_id_num,
-            Auth::user()->role,
-            'SECTION_' . strtoupper($section->status),
-            'Set section ' . $section->section_name . ' to ' . $section->status
-        );
+        if ($newStatus === 'active' && $section->subject && $section->subject->status !== 'active') {
+            return back()->with('error', 'Cannot activate section while its parent subject is inactive.');
+        }
+
+        $section->update(['status' => $newStatus]);
 
         return back()->with('success', 'Section is now ' . $section->status . '.');
     }

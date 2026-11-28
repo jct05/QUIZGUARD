@@ -193,7 +193,9 @@
                     <p class="text-xs font-semibold text-slate-800">
                         {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}
                     </p>
-                    <p class="text-[10px] text-slate-500">{{ ucfirst(Auth::user()->role) }}</p>
+                    <p class="text-[11px] text-slate-500">
+                        Teacher &bull; <span class="font-bold text-[#11422d]">{{ auth()->user()->department ?? 'Faculty' }}</span>
+                    </p>
                 </div>
                 <div
                     class="w-9 h-9 rounded-full bg-[#11422d] text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">

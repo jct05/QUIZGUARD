@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Subject;
+use App\Models\Section;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -92,17 +94,23 @@ class SubjectController extends Controller
             ->where('teacher_id', Auth::id())
             ->firstOrFail();
 
-        $subject->update([
-            'status' => $subject->status === 'active' ? 'inactive' : 'active',
-        ]);
+        $newStatus = $subject->status === 'active' ? 'inactive' : 'active';
+
+        DB::transaction(function () use ($subject, $newStatus) {
+            $subject->update(['status' => $newStatus]);
+
+            Section::where('subject_id', $subject->subject_id)
+                ->where('teacher_id', Auth::id())
+                ->update(['status' => $newStatus]);
+        });
 
         ActivityLog::record(
             Auth::user()->school_id_num,
             Auth::user()->role,
-            'SUBJECT_' . strtoupper($subject->status),
-            'Set subject ' . $subject->subject_code . ' to ' . $subject->status
+            'SUBJECT_' . strtoupper($newStatus),
+            'Set subject ' . $subject->subject_code . ' and its sections to ' . $newStatus
         );
 
-        return redirect('/teacher/subjects')->with('success', 'Subject is now ' . $subject->status . '.');
+        return back()->with('success', 'Subject and all its sections are now ' . $newStatus . '.');
     }
 }

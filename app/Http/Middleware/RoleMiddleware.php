@@ -15,6 +15,16 @@ class RoleMiddleware
             return redirect('/login');
         }
 
+        // Block deactivated users from accessing protected portal routes
+        if (strtolower(trim((string) Auth::user()->status)) !== 'active') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect('/login')->withErrors([
+                'dwcc_email' => 'Your account is currently inactive. Please contact the administrator.',
+            ]);
+        }
+
         $userRole = strtolower(trim((string) Auth::user()->role));
         $allowedRoles = array_map(fn($r) => strtolower(trim($r)), $roles);
 

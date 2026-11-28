@@ -27,6 +27,7 @@
                     Upload Question Bank
                 </summary>
                 <form method="POST" action="{{ url('/teacher/question-banks') }}" enctype="multipart/form-data"
+                    onsubmit="disableImportSubmit(this)"
                     class="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-lg p-4 space-y-2.5 z-30">
                     @csrf
                     <input name="bank_title" value="{{ old('bank_title') }}" placeholder="Bank title (e.g. Midterm Exam)"
@@ -218,4 +219,18 @@
             <div>{{ $banks->links() }}</div>
         </div>
     </div>
+
+    <script>
+        // Disable import button immediately to prevent duplicate uploads
+        function disableImportSubmit(form) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (!btn) return true;
+            if (btn.dataset.submitted === 'true') return false;
+            btn.dataset.submitted = 'true';
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            btn.textContent = 'Importing...';
+            return true;
+        }
+    </script>
 @endsection
